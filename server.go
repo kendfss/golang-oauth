@@ -1,39 +1,49 @@
 package main
 
 import (
-    "bufio"
     "encoding/json"
     "fmt"
+    "io/fs"
     "io/ioutil"
     "log"
     "net/http"
     "os"
-    "path/filepath"
     "strconv"
-    "sync"
     
-)
-
-var (
-    credentials map[string]string
-    clientID string
-    clientSecret string
-
-    src = http.Dir("src")
-    counter int
-    mutex = &sync.Mutex{}
-    httpClient = http.Client{}
 )
 
 type OAuthAccessResponse struct {
     AccessToken string `json:"access_token"`
 }
+type APIKey struct {
+    ClientID string `json:"clientID"`
+    ClientSecret string `json:"clientSecret"`
+}
+type KeyChain struct {
+    Github APIKey `json:"github"`
+    Google APIKey `json:"google"`
+}
+
+var (
+    // credentials map[string]map[string]string
+    credentials KeyChain
+    // clientID string
+    // clientSecret string
+
+    src = http.Dir("src")
+    httpClient = http.Client{}
+)
+
+
 func getCredsFrom(path string) error {
     bites, err := ioutil.ReadFile(path)
     if err != nil {
         return err
     }
     err = json.Unmarshal(bites, &credentials)
+    if e := saveJSONP(credentials, "src/creds.jsonp", "credata"); e != nil {
+        log.Printf("Couldn't save creds.jsonp: %s", e)
+    }
     return err
 }
 func pwd() string {
@@ -43,73 +53,21 @@ func pwd() string {
     }
     return path
 }
-func read(path string) (string, error) {
-    lines, err := readLines(path)
-    if err != nil {
-        log.Printf("Couldn't read %q\n\t%s\n", path, err)
-        return "", err
-    }
-    str := ""
-    for _, line := range lines {
-        str += line
-    }
-    return str, nil
-}
-func readLines(path string) ([]string, error) {
-    file, err := os.Open(path)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
-
-    var lines []string
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        lines = append(lines, scanner.Text())
-    }
-    return lines, scanner.Err()
-}
-
-func writeLines(lines []string, path string) error {
-    file, err := os.Create(path)
+func saveJSONP(object interface{}, filename, varname string) error {
+    data, err := json.Marshal(object)
     if err != nil {
         return err
     }
-    defer file.Close()
-
-    w := bufio.NewWriter(file)
-    for _, line := range lines {
-        fmt.Fprintln(w, line)
-    }
-    return w.Flush()
-}
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-    path := filepath.Join("src", "index.htm")
-    // path := filepath.Join("home.htm")
-    text, err := read(path)
-    if err != nil {
-        log.Printf("Couldn't read %q\n", "home.htm")
-    }
-    fmt.Fprintf(w, text)
-    fmt.Println("Endpoint Hit: homePage")
-}
-
-
-func incrementCounter(w http.ResponseWriter, r *http.Request) {
-    mutex.Lock()
-    counter++
-    fmt.Fprintf(w, strconv.Itoa(counter))
-    mutex.Unlock()
+    data = append([]byte(fmt.Sprintf("%s = `", varname)), data...)
+    data = append(data, []byte("`;")...)
+    return ioutil.WriteFile(filename, data, fs.ModePerm)
 }
 
 func handleRequests(port int) {
     portNum := strconv.Itoa(port)
     log.Println("On:", "http://localhost:" + portNum)
-    fs := http.FileServer(src)
-    http.Handle("/", fs)
-
-        
+    server := http.FileServer(src)
+    http.Handle("/", server)
 
     // Create a new redirect route route
     http.HandleFunc("/oauth/redirect", func(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +83,7 @@ func handleRequests(port int) {
 
         // Next, lets for the HTTP request to call the github oauth enpoint
         // to get our access token
-        reqURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s", clientID, clientSecret, code)
+        reqURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s", credentials.Github.ClientID, credentials.Github.ClientSecret, code)
         log.Printf("Request url:\n\t%q\n", reqURL)
         req, err := http.NewRequest(http.MethodPost, reqURL, nil)
         if err != nil {
@@ -153,7 +111,7 @@ func handleRequests(port int) {
 
         // Finally, send a response to redirect the user to the "welcome" page
         // with the access token
-        w.Header().Set("Location", "/welcome.html?access_token="+t.AccessToken)
+        w.Header().Set("Location", "src/welcome.htm?access_token="+t.AccessToken)
         log.Printf("AccessToken:\n\t%q\n", t.AccessToken)
         w.WriteHeader(http.StatusFound)
     })
@@ -166,8 +124,8 @@ func main() {
         log.Fatalf("Couldn't parse credentials:\n\t%s\n", err)
     }
     
-    clientID = credentials["clientID"]
-    clientSecret = credentials["clientSecret"]
+    // clientID = credentials["github"]["clientID"]
+    // clientSecret = credentials["github"]["clientSecret"]
 
     log.Printf("Serving: %q\n", pwd())
     handleRequests(8000)

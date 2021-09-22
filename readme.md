@@ -13,9 +13,21 @@ Github
 1. [Register your new application on Github](https://github.com/settings/applications/new). 
     - In the "callback URL" field, enter `http://localhost:8080/oauth/redirect`
     - Request a client secret
-1. Save your credentials in a file called `golang-oauth/golang-creds.json`
+1. Save your credentials in a file called `golang-oauth/golang-creds.json` using the following syntax:
+    ```json
+    {
+        "github": {
+            "clientID": "",
+            "clientSecret": "",
+        },
+        "google": {
+            "clientID": "",
+            "clientSecret": "",
+        }
+    }
+    ```
 1. Start the server by executing `go run server.go`
-1. Navigate to `http://localhost:8080` on your browser.
+1. Navigate to `http://localhost:8000` on your browser.
   
   
 

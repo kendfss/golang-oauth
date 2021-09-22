@@ -3,18 +3,24 @@ const format = function(string) {
   return string.replace(/{(\d+)}/g, function(match, number) { 
     return typeof args[number] != 'undefined'
       ? args[number]
-      : match
-    ;
+      : match;
   });
 };
+const findPort = function() {
+  if (mode == "dev") {
+    let parts = window.location.origin.split(':');
+    return parts[parts.length - 1];
+  }
+};
 
-const creds = JSON.parse(credata);
 const redirects = {
-  "dev": "http://localhost:8080/oauth/redirect",
+  "dev": "http://localhost:"+findPort()+"/oauth/redirect",
   "pro": ""
 };
 const mode = (1) ? "dev" : "pro";
+const creds = JSON.parse(credata);
+console.log(creds);
 const github = document.querySelector("#github");
-github.href = format(github.href, creds.gh.clientID, redirects[mode]);
+github.href = format(github.href, creds.github.clientID, redirects[mode]);
 const google = document.querySelector("#google");
-google.href = format(google.href, creds.goo.clientID, redirects[mode]);
+google.href = format(google.href, creds.google.clientID, redirects[mode]);

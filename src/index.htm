@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html>
+  <header>
+    <title>Oauth2 Demo</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+  </header>
 
-    <body>
-        <!-- <a href="oauth/redirect"> -->
-        <a id="github" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
-            Login with github
-        </a>
-        <br>
-        <a id="google" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
-            Login with google
-        </a>
-        <br>
+  <body>
+    <a id="github" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
+      Login with github
+    </a>
+    <br>
+    <a id="google" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
+      Login with google
+    </a>
+    <br>
     <script type="text/javascript" src="creds.jsonp"></script>
-<script type="text/javascript" src="credding.js"></script>
-    </body>
+    <script type="text/javascript" src="credding.js"></script>
+  </body>
 
 </html>
