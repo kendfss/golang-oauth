@@ -2,8 +2,9 @@ package main
 
 import (
     "bufio"
+    "encoding/json"
     "fmt"
-    _"io/ioutil"
+    "io/ioutil"
     "log"
     "net/http"
     "os"
@@ -11,26 +12,34 @@ import (
     "strconv"
     "sync"
     
-    // _"github.com/gorilla/mux"
-    // _"github.com/GeertJohan/go.rice"
 )
 
-var src = http.Dir("src")
-var counter int
-var mutex = &sync.Mutex{}
-const clientID = "<your client id>"
-const clientSecret = "<your client secret>"
-// We will be using `httpClient` to make external HTTP requests later in our code
-const httpClient = http.Client{}
+var (
+    credentials map[string]string
+    clientID string
+    clientSecret string
+
+    src = http.Dir("src")
+    counter int
+    mutex = &sync.Mutex{}
+    httpClient = http.Client{}
+)
 
 type OAuthAccessResponse struct {
     AccessToken string `json:"access_token"`
 }
-
+func getCredsFrom(path string) error {
+    bites, err := ioutil.ReadFile(path)
+    if err != nil {
+        return err
+    }
+    err = json.Unmarshal(bites, &credentials)
+    return err
+}
 func pwd() string {
     path, err := os.Getwd()
     if err != nil {
-        log.Printf("Couldn't find current working directory: %v", err)
+        log.Printf("Couldn't find current working directory: %v\n", err)
     }
     return path
 }
@@ -76,7 +85,7 @@ func writeLines(lines []string, path string) error {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-    path := filepath.Join("src", "text", "home.htm")
+    path := filepath.Join("src", "index.htm")
     // path := filepath.Join("home.htm")
     text, err := read(path)
     if err != nil {
@@ -97,7 +106,7 @@ func incrementCounter(w http.ResponseWriter, r *http.Request) {
 func handleRequests(port int) {
     portNum := strconv.Itoa(port)
     log.Println("On:", "http://localhost:" + portNum)
-    fs := http.FileServer(http.Dir(pwd()))
+    fs := http.FileServer(src)
     http.Handle("/", fs)
 
         
@@ -111,10 +120,13 @@ func handleRequests(port int) {
             w.WriteHeader(http.StatusBadRequest)
         }
         code := r.FormValue("code")
+        log.Printf("code:\n\t%q\n", code)
+
 
         // Next, lets for the HTTP request to call the github oauth enpoint
         // to get our access token
         reqURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s", clientID, clientSecret, code)
+        log.Printf("Request url:\n\t%q\n", reqURL)
         req, err := http.NewRequest(http.MethodPost, reqURL, nil)
         if err != nil {
             fmt.Fprintf(os.Stdout, "could not create HTTP request: %v", err)
@@ -142,6 +154,7 @@ func handleRequests(port int) {
         // Finally, send a response to redirect the user to the "welcome" page
         // with the access token
         w.Header().Set("Location", "/welcome.html?access_token="+t.AccessToken)
+        log.Printf("AccessToken:\n\t%q\n", AccessToken)
         w.WriteHeader(http.StatusFound)
     })
 
@@ -149,6 +162,13 @@ func handleRequests(port int) {
 }
 
 func main() {
+    if err:=getCredsFrom("creds.json"); err != nil {
+        log.Fatalf("Couldn't parse credentials:\n\t%s\n", err)
+    }
+    
+    clientID = credentials["clientID"]
+    clientSecret = credentials["clientSecret"]
+
     log.Printf("Serving: %q\n", pwd())
     handleRequests(8000)
 }
