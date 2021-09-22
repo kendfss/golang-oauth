@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
-  <body>
-    <a href="oauth/redirect">
-    <!-- <a href="https://github.com/login/oauth/authorize?client_id=myclientid123&redirect_uri=http://localhost:8080/oauth/redirect"> -->
-      Login with github
-    </a>
-    <br>
-    <a href="https://github.com/login/oauth/authorize?client_id=myclientid123&redirect_uri=http://localhost:8080/oauth/redirect">
-      Login with google
-    </a>
-    <br>
-  </body>
+
+    <body>
+        <!-- <a href="oauth/redirect"> -->
+        <a id="github" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
+            Login with github
+        </a>
+        <br>
+        <a id="google" href="https://github.com/login/oauth/authorize?client_id={0}&redirect_uri={1}">
+            Login with google
+        </a>
+        <br>
+    <script type="text/javascript" src="creds.jsonp"></script>
+<script type="text/javascript" src="credding.js"></script>
+    </body>
+
 </html>

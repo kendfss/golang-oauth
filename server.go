@@ -154,7 +154,7 @@ func handleRequests(port int) {
         // Finally, send a response to redirect the user to the "welcome" page
         // with the access token
         w.Header().Set("Location", "/welcome.html?access_token="+t.AccessToken)
-        log.Printf("AccessToken:\n\t%q\n", AccessToken)
+        log.Printf("AccessToken:\n\t%q\n", t.AccessToken)
         w.WriteHeader(http.StatusFound)
     })
 
